@@ -1,19 +1,63 @@
 import { buildCircle, highlightPositions } from "./circle";
 import { getHighlightedPositions, WHISTLES } from "./data";
+import { buildNav } from "./nav";
 import { buildSelector } from "./selector";
+import { buildTabsPage } from "./tabs-page";
+
+type PageId = "circle" | "tabs";
+
+function getInitialPage(): PageId {
+	const hash = window.location.hash.replace(/^#/, "").split("?")[0];
+	return hash === "tabs" ? "tabs" : "circle";
+}
+
+function showPage(page: PageId): void {
+	const circle = document.getElementById("page-circle") as HTMLElement;
+	const tabs = document.getElementById("page-tabs") as HTMLElement;
+	circle.classList.toggle("page--hidden", page !== "circle");
+	tabs.classList.toggle("page--hidden", page !== "tabs");
+	if (page === "circle") {
+		window.location.hash = "circle";
+	} else {
+		if (!window.location.hash.startsWith("#tabs")) {
+			window.location.hash = "tabs";
+		}
+	}
+}
 
 document.addEventListener("DOMContentLoaded", () => {
 	const svg = document.getElementById("circle") as unknown as SVGSVGElement;
 	const selectorEl = document.getElementById("selector") as HTMLElement;
+	const navEl = document.getElementById("nav") as HTMLElement;
 
 	buildCircle(svg);
 
 	const defaultWhistle = WHISTLES.find((w) => w.label === "D") ?? WHISTLES[2];
 
-	const setActive = buildSelector(selectorEl, (position) => {
+	const setActiveSelector = buildSelector(selectorEl, (position) => {
 		highlightPositions(getHighlightedPositions(position));
 	});
 
-	setActive(defaultWhistle.position);
+	setActiveSelector(defaultWhistle.position);
 	highlightPositions(getHighlightedPositions(defaultWhistle.position));
+
+	const initialPage = getInitialPage();
+	const tabsEl = document.getElementById("page-tabs") as HTMLElement;
+	buildTabsPage(tabsEl);
+
+	const setActiveNav = buildNav(navEl, (page) => {
+		showPage(page);
+	});
+
+	setActiveNav(initialPage);
+	showPage(initialPage);
+
+	window.addEventListener("hashchange", () => {
+		const page = getInitialPage();
+		setActiveNav(page);
+		const circle = document.getElementById("page-circle") as HTMLElement;
+		const tabs = document.getElementById("page-tabs") as HTMLElement;
+		circle.classList.toggle("page--hidden", page !== "circle");
+		tabs.classList.toggle("page--hidden", page !== "tabs");
+	});
 });
