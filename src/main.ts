@@ -2,7 +2,7 @@ import { buildCircle, highlightPositions } from "./circle";
 import { getHighlightedPositions, WHISTLES } from "./data";
 import { buildNav } from "./nav";
 import { buildSelector } from "./selector";
-import { buildTabsPage } from "./tabs-page";
+import { buildTabsPage, decodeTabState } from "./tabs-page";
 
 type PageId = "circle" | "tabs";
 
@@ -43,7 +43,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	const initialPage = getInitialPage();
 	const tabsEl = document.getElementById("page-tabs") as HTMLElement;
-	buildTabsPage(tabsEl);
+	const hashData = window.location.hash.match(/[?&]data=([^&]+)/);
+	const initialState = hashData ? decodeTabState(hashData[1]) : null;
+	buildTabsPage(tabsEl, initialState);
 
 	const setActiveNav = buildNav(navEl, (page) => {
 		showPage(page);

@@ -8,15 +8,66 @@ import { buildHoleInput } from "./tab-hole-input";
 import type { TextInputController } from "./tab-text-input";
 import { buildTextInput } from "./tab-text-input";
 
-export function buildTabsPage(container: HTMLElement): void {
-	const state: TabState = {
+function isValidNote(n: unknown): n is TabNote {
+	if (typeof n !== "object" || n === null) return false;
+	const note = n as Record<string, unknown>;
+	if (!Array.isArray(note.holes) || note.holes.length !== 6) return false;
+	if (!note.holes.every((h: unknown) => typeof h === "boolean")) return false;
+	if (note.octave !== 0 && note.octave !== 1) return false;
+	return true;
+}
+
+export function decodeTabState(encoded: string): TabState | null {
+	try {
+		const parsed: unknown = JSON.parse(atob(encoded));
+		if (typeof parsed !== "object" || parsed === null) return null;
+		const s = parsed as Record<string, unknown>;
+		if (
+			typeof s.keyPosition !== "number" ||
+			!Number.isInteger(s.keyPosition) ||
+			s.keyPosition < 0 ||
+			s.keyPosition > 11
+		)
+			return null;
+		if (!Array.isArray(s.notes) || !s.notes.every(isValidNote)) return null;
+		const inputMode =
+			s.inputMode === "text" ? "text" : ("visual" as TabState["inputMode"]);
+		return {
+			keyPosition: s.keyPosition,
+			notes: s.notes,
+			inputMode,
+			title: typeof s.title === "string" ? s.title : "",
+		};
+	} catch {
+		return null;
+	}
+}
+
+export function buildTabsPage(
+	container: HTMLElement,
+	initialState?: TabState | null,
+): void {
+	const state: TabState = initialState ?? {
 		keyPosition: WHISTLES.find((w) => w.label === "D")?.position ?? 2,
 		notes: [] as TabNote[],
 		inputMode: "visual",
+		title: "",
 	};
 
 	const page = document.createElement("div");
 	page.className = "tabs-page";
+
+	const titleInput = document.createElement("input");
+	titleInput.type = "text";
+	titleInput.className = "tabs-title-input";
+	titleInput.placeholder = "Untitled piece";
+	titleInput.value = state.title;
+	titleInput.setAttribute("aria-label", "Piece title");
+	titleInput.addEventListener("input", () => {
+		state.title = titleInput.value;
+	});
+
+	page.appendChild(titleInput);
 
 	const keyRow = document.createElement("div");
 	keyRow.className = "tabs-key-row";
@@ -151,7 +202,18 @@ export function buildTabsPage(container: HTMLElement): void {
 		const encoded = btoa(JSON.stringify(state));
 		const url = `${window.location.origin}${window.location.pathname}#tabs?data=${encoded}`;
 		window.location.hash = `tabs?data=${encoded}`;
-		navigator.clipboard.writeText(url).catch(() => {});
+		navigator.clipboard
+			.writeText(url)
+			.then(() => {
+				const original = shareBtn.textContent;
+				shareBtn.textContent = "Copied!";
+				shareBtn.disabled = true;
+				setTimeout(() => {
+					shareBtn.textContent = original;
+					shareBtn.disabled = false;
+				}, 2000);
+			})
+			.catch(() => {});
 	}
 
 	renderInputPanel();

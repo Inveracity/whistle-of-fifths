@@ -27,6 +27,7 @@ export interface TabState {
 	keyPosition: number;
 	notes: TabNote[];
 	inputMode: "visual" | "text";
+	title: string;
 }
 
 function key(bits: number, octave: 0 | 1): number {
