@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Whistle of Fifths</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="layout">
+        <header class="header">
+            <h1 class="title">Whistle of Fifths</h1>
+            <p class="subtitle">Select a whistle key to see its range on the circle of fifths</p>
+        </header>
+        <main class="main">
+            <div class="circle-wrapper">
+                <svg id="circle" class="circle-svg" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg"
+                    aria-label="Circle of fifths" role="img"></svg>
+            </div>
+            <div class="selector-wrapper">
+                <span class="selector-label">Whistle key</span>
+                <div id="selector" class="selector"></div>
+            </div>
+        </main>
+    </div>
+    <script type="module" src="main.js"></script>
+</body>
+
+</html>

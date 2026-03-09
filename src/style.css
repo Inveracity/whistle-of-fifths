@@ -1,0 +1,217 @@
+:root {
+	--bg: #f5f4f0;
+	--surface: #ffffff;
+	--surface-2: #eeecea;
+	--border: #d4d0c8;
+	--text: #1a1916;
+	--text-muted: #6b685f;
+	--accent: #2e5c3e;
+	--accent-fg: #ffffff;
+	--segment-default: #e8e5df;
+	--segment-default-stroke: #ccc9c0;
+	--segment-highlight: #2e5c3e;
+	--segment-highlight-stroke: #1f3f2b;
+	--label-default: #4a4740;
+	--label-highlight: #ffffff;
+	--shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+	--radius: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #111210;
+		--surface: #1c1d1a;
+		--surface-2: #242522;
+		--border: #333430;
+		--text: #e8e5de;
+		--text-muted: #888580;
+		--accent: #4a9b6a;
+		--accent-fg: #0d1a12;
+		--segment-default: #2a2b27;
+		--segment-default-stroke: #3a3b36;
+		--segment-highlight: #4a9b6a;
+		--segment-highlight-stroke: #3a7a54;
+		--label-default: #9a978f;
+		--label-highlight: #0d1a12;
+		--shadow: 0 4px 32px rgba(0, 0, 0, 0.4);
+	}
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+html {
+	font-size: 16px;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+body {
+	background: var(--bg);
+	color: var(--text);
+	font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+	min-height: 100dvh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.layout {
+	width: 100%;
+	max-width: 640px;
+	padding: clamp(1.5rem, 5vw, 3rem) clamp(1rem, 4vw, 2rem);
+	display: flex;
+	flex-direction: column;
+	gap: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.header {
+	text-align: center;
+}
+
+.title {
+	font-size: clamp(1.5rem, 4vw, 2.25rem);
+	font-weight: 700;
+	letter-spacing: -0.03em;
+	line-height: 1.1;
+	color: var(--text);
+}
+
+.subtitle {
+	margin-top: 0.5rem;
+	font-size: clamp(0.8125rem, 2vw, 0.9375rem);
+	color: var(--text-muted);
+	line-height: 1.5;
+}
+
+.main {
+	display: flex;
+	flex-direction: column;
+	gap: clamp(1.25rem, 3vw, 2rem);
+	align-items: center;
+}
+
+.circle-wrapper {
+	width: 100%;
+	max-width: 480px;
+	background: var(--surface);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.circle-svg {
+	width: 100%;
+	height: auto;
+	display: block;
+}
+
+.segment {
+	fill: var(--segment-default);
+	stroke: var(--segment-default-stroke);
+	stroke-width: 1;
+	transition:
+		fill 200ms ease,
+		stroke 200ms ease;
+	cursor: default;
+}
+
+.segment--highlighted {
+	fill: var(--segment-highlight);
+	stroke: var(--segment-highlight-stroke);
+}
+
+.segment-label {
+	font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+	fill: var(--label-default);
+	transition: fill 200ms ease;
+	pointer-events: none;
+	user-select: none;
+}
+
+.segment-label--major {
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.segment-label--minor {
+	font-size: 11px;
+	font-weight: 500;
+}
+
+.segment-label--highlighted {
+	fill: var(--label-highlight);
+}
+
+.selector-wrapper {
+	width: 100%;
+	max-width: 480px;
+	background: var(--surface);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	padding: clamp(1rem, 3vw, 1.5rem);
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.selector-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--text-muted);
+}
+
+.selector {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.selector-btn {
+	appearance: none;
+	border: 1.5px solid var(--border);
+	background: var(--surface-2);
+	color: var(--text);
+	font-family: inherit;
+	font-size: 0.875rem;
+	font-weight: 500;
+	padding: 0.4rem 0.875rem;
+	border-radius: 999px;
+	cursor: pointer;
+	transition:
+		background 150ms ease,
+		border-color 150ms ease,
+		color 150ms ease,
+		box-shadow 150ms ease;
+	line-height: 1.4;
+}
+
+.selector-btn:hover {
+	border-color: var(--accent);
+	color: var(--accent);
+	background: var(--surface);
+}
+
+.selector-btn:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+
+.selector-btn--active {
+	background: var(--accent);
+	border-color: var(--accent);
+	color: var(--accent-fg);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.selector-btn--active:hover {
+	background: var(--accent);
+	color: var(--accent-fg);
+}

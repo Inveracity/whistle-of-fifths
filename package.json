@@ -1,0 +1,16 @@
+{
+	"name": "whistle-of-fifths",
+	"version": "0.1.0",
+	"scripts": {
+		"dev": "bun run server.ts",
+		"build": "bun build src/main.ts --outdir dist --minify && cp src/index.html dist/index.html && cp src/style.css dist/style.css",
+		"lint": "biome check src/**/*.ts",
+		"test": "vitest run",
+		"test:watch": "vitest"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.6",
+		"@types/bun": "^1.3.10",
+		"vitest": "^4.0.18"
+	}
+}
