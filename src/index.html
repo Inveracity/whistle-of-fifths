@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Whistle of Fifths</title>
     <link rel="stylesheet" href="style.css" />
+    <script>(() => { var t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; })();</script>
 </head>
 
 <body>
@@ -16,6 +17,7 @@
                 <h1 class="title">Whistle of Fifths</h1>
                 <p class="subtitle">Handy whistle tool for musicians</p>
             </header>
+            <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle colour scheme"></button>
         </div>
         <div id="page-circle" class="page">
             <main class="main">

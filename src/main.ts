@@ -29,6 +29,32 @@ document.addEventListener("DOMContentLoaded", () => {
 	const svg = document.getElementById("circle") as unknown as SVGSVGElement;
 	const selectorEl = document.getElementById("selector") as HTMLElement;
 	const navEl = document.getElementById("nav") as HTMLElement;
+	const themeToggle = document.getElementById(
+		"theme-toggle",
+	) as HTMLButtonElement;
+
+	function resolvedTheme(): "light" | "dark" {
+		const saved = document.documentElement.dataset.theme as
+			| "light"
+			| "dark"
+			| undefined;
+		if (saved === "light" || saved === "dark") return saved;
+		return window.matchMedia("(prefers-color-scheme: dark)").matches
+			? "dark"
+			: "light";
+	}
+
+	function applyTheme(theme: "light" | "dark"): void {
+		document.documentElement.dataset.theme = theme;
+		localStorage.setItem("theme", theme);
+		themeToggle.textContent = theme === "dark" ? "Light" : "Dark";
+	}
+
+	applyTheme(resolvedTheme());
+
+	themeToggle.addEventListener("click", () => {
+		applyTheme(resolvedTheme() === "dark" ? "light" : "dark");
+	});
 
 	buildCircle(svg);
 
