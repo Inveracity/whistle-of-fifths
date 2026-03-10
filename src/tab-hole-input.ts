@@ -69,7 +69,7 @@ export function buildHoleInput(
 	controls.className = "hole-input-controls";
 
 	const octaveToggle = document.createElement("div");
-	octaveToggle.className = "tabs-mode-toggle";
+	octaveToggle.className = "tabs-mode-toggle tabs-mode-toggle--vertical";
 
 	const octaveLowBtn = document.createElement("button");
 	octaveLowBtn.type = "button";

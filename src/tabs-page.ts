@@ -67,8 +67,6 @@ export function buildTabsPage(
 		state.title = titleInput.value;
 	});
 
-	page.appendChild(titleInput);
-
 	const keyRow = document.createElement("div");
 	keyRow.className = "tabs-key-row";
 
@@ -144,11 +142,65 @@ export function buildTabsPage(
 
 	actionsRow.appendChild(shareBtn);
 
-	page.appendChild(keyRow);
-	page.appendChild(modeToggle);
-	page.appendChild(inputPanel);
+	page.appendChild(titleInput);
 	page.appendChild(gridContainer);
 	page.appendChild(actionsRow);
+
+	const inputBar = document.createElement("div");
+	inputBar.className = "tabs-input-bar";
+
+	const inputBarHandle = document.createElement("div");
+	inputBarHandle.className = "tabs-input-bar-handle";
+
+	const chevronBtn = document.createElement("button");
+	chevronBtn.type = "button";
+	chevronBtn.className = "tabs-input-chevron";
+	chevronBtn.setAttribute("aria-label", "Collapse input");
+	chevronBtn.setAttribute("aria-expanded", "true");
+
+	const chevronSvg = document.createElementNS(
+		"http://www.w3.org/2000/svg",
+		"svg",
+	);
+	chevronSvg.setAttribute("viewBox", "0 0 24 24");
+	chevronSvg.setAttribute("width", "20");
+	chevronSvg.setAttribute("height", "20");
+	chevronSvg.setAttribute("aria-hidden", "true");
+	chevronSvg.setAttribute("fill", "none");
+	chevronSvg.setAttribute("stroke", "currentColor");
+	chevronSvg.setAttribute("stroke-width", "2");
+	chevronSvg.setAttribute("stroke-linecap", "round");
+	chevronSvg.setAttribute("stroke-linejoin", "round");
+
+	const chevronPath = document.createElementNS(
+		"http://www.w3.org/2000/svg",
+		"polyline",
+	);
+	chevronPath.setAttribute("points", "6 9 12 15 18 9");
+	chevronSvg.appendChild(chevronPath);
+	chevronBtn.appendChild(chevronSvg);
+
+	const inputContent = document.createElement("div");
+	inputContent.className = "tabs-input-content";
+	inputContent.appendChild(keyRow);
+	inputContent.appendChild(modeToggle);
+	inputContent.appendChild(inputPanel);
+
+	let collapsed = false;
+	chevronBtn.addEventListener("click", () => {
+		collapsed = !collapsed;
+		inputBar.classList.toggle("tabs-input-bar--collapsed", collapsed);
+		chevronBtn.setAttribute(
+			"aria-label",
+			collapsed ? "Expand input" : "Collapse input",
+		);
+		chevronBtn.setAttribute("aria-expanded", String(!collapsed));
+	});
+
+	inputBarHandle.appendChild(chevronBtn);
+	inputBar.appendChild(inputBarHandle);
+	inputBar.appendChild(inputContent);
+	page.appendChild(inputBar);
 	container.appendChild(page);
 
 	function renderInputPanel(): void {
