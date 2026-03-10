@@ -16,7 +16,9 @@ describe("decodeTabState", () => {
 		const result = decodeTabState(state);
 		expect(result).not.toBeNull();
 		expect(result?.keyPosition).toBe(2);
-		expect(result?.notes).toEqual([]);
+		expect(result?.phrases).toHaveLength(1);
+		expect(result?.phrases[0].notes).toEqual([]);
+		expect(result?.phrases[0].columns).toBe(8);
 		expect(result?.inputMode).toBe("visual");
 		expect(result?.title).toBe("");
 	});
@@ -33,8 +35,9 @@ describe("decodeTabState", () => {
 			title: "My tune",
 		});
 		const result = decodeTabState(state);
-		expect(result?.notes).toHaveLength(1);
-		expect(result?.notes[0].holes).toEqual([
+		expect(result?.phrases).toHaveLength(1);
+		expect(result?.phrases[0].notes).toHaveLength(1);
+		expect(result?.phrases[0].notes[0].holes).toEqual([
 			true,
 			true,
 			true,
@@ -42,7 +45,7 @@ describe("decodeTabState", () => {
 			true,
 			false,
 		]);
-		expect(result?.notes[0].octave).toBe(0);
+		expect(result?.phrases[0].notes[0].octave).toBe(0);
 		expect(result?.title).toBe("My tune");
 		expect(result?.inputMode).toBe("text");
 	});
@@ -167,6 +170,51 @@ describe("decodeTabState", () => {
 			inputMode: "visual",
 			title: "",
 		});
-		expect(decodeTabState(state)?.notes[0].octave).toBe(1);
+		expect(decodeTabState(state)?.phrases[0].notes[0].octave).toBe(1);
+	});
+
+	it("decodes new phrases format", () => {
+		const state = encode({
+			keyPosition: 2,
+			phrases: [
+				{
+					columns: 6,
+					notes: [{ holes: [true, true, true, true, true, true], octave: 0 }],
+				},
+				{ columns: 8, notes: [] },
+			],
+			inputMode: "visual",
+			title: "",
+		});
+		const result = decodeTabState(state);
+		expect(result).not.toBeNull();
+		expect(result?.phrases).toHaveLength(2);
+		expect(result?.phrases[0].columns).toBe(6);
+		expect(result?.phrases[0].notes).toHaveLength(1);
+		expect(result?.phrases[1].columns).toBe(8);
+		expect(result?.phrases[1].notes).toHaveLength(0);
+	});
+
+	it("returns null when phrases contains invalid phrase", () => {
+		const state = encode({
+			keyPosition: 0,
+			phrases: [{ columns: 0, notes: [] }],
+			inputMode: "visual",
+			title: "",
+		});
+		expect(decodeTabState(state)).toBeNull();
+	});
+
+	it("wraps legacy notes to a single phrase with columns 8", () => {
+		const state = encode({
+			keyPosition: 0,
+			notes: [{ holes: [true, true, true, true, true, false], octave: 0 }],
+			inputMode: "visual",
+			title: "",
+		});
+		const result = decodeTabState(state);
+		expect(result?.phrases).toHaveLength(1);
+		expect(result?.phrases[0].columns).toBe(8);
+		expect(result?.phrases[0].notes).toHaveLength(1);
 	});
 });

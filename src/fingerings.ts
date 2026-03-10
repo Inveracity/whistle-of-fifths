@@ -23,9 +23,14 @@ export interface TabNote {
 	octave: 0 | 1;
 }
 
+export interface Phrase {
+	columns: number;
+	notes: TabNote[];
+}
+
 export interface TabState {
 	keyPosition: number;
-	notes: TabNote[];
+	phrases: Phrase[];
 	inputMode: "visual" | "text";
 	title: string;
 }

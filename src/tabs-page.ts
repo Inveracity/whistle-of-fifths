@@ -1,5 +1,5 @@
 import { WHISTLES } from "./data";
-import type { TabNote, TabState } from "./fingerings";
+import type { Phrase, TabState } from "./fingerings";
 import { buildSelector } from "./selector";
 import type { TabGridController } from "./tab-grid";
 import { buildTabGrid } from "./tab-grid";
@@ -8,12 +8,26 @@ import { buildHoleInput } from "./tab-hole-input";
 import type { TextInputController } from "./tab-text-input";
 import { buildTextInput } from "./tab-text-input";
 
-function isValidNote(n: unknown): n is TabNote {
+function isValidNote(n: unknown): n is { holes: boolean[]; octave: 0 | 1 } {
 	if (typeof n !== "object" || n === null) return false;
 	const note = n as Record<string, unknown>;
 	if (!Array.isArray(note.holes) || note.holes.length !== 6) return false;
 	if (!note.holes.every((h: unknown) => typeof h === "boolean")) return false;
 	if (note.octave !== 0 && note.octave !== 1) return false;
+	return true;
+}
+
+function isValidPhrase(p: unknown): p is Phrase {
+	if (typeof p !== "object" || p === null) return false;
+	const phrase = p as Record<string, unknown>;
+	if (
+		typeof phrase.columns !== "number" ||
+		!Number.isInteger(phrase.columns) ||
+		phrase.columns < 1
+	)
+		return false;
+	if (!Array.isArray(phrase.notes) || !phrase.notes.every(isValidNote))
+		return false;
 	return true;
 }
 
@@ -29,12 +43,20 @@ export function decodeTabState(encoded: string): TabState | null {
 			s.keyPosition > 11
 		)
 			return null;
-		if (!Array.isArray(s.notes) || !s.notes.every(isValidNote)) return null;
 		const inputMode =
 			s.inputMode === "text" ? "text" : ("visual" as TabState["inputMode"]);
+		let phrases: Phrase[];
+		if (Array.isArray(s.phrases)) {
+			if (!s.phrases.every(isValidPhrase)) return null;
+			phrases = s.phrases;
+		} else if (Array.isArray(s.notes) && s.notes.every(isValidNote)) {
+			phrases = [{ columns: 8, notes: s.notes }];
+		} else {
+			return null;
+		}
 		return {
 			keyPosition: s.keyPosition,
-			notes: s.notes,
+			phrases,
 			inputMode,
 			title: typeof s.title === "string" ? s.title : "",
 		};
@@ -49,10 +71,12 @@ export function buildTabsPage(
 ): void {
 	const state: TabState = initialState ?? {
 		keyPosition: WHISTLES.find((w) => w.label === "D")?.position ?? 2,
-		notes: [] as TabNote[],
+		phrases: [{ columns: 8, notes: [] }],
 		inputMode: "visual",
 		title: "",
 	};
+
+	let activePhraseIdx = 0;
 
 	const page = document.createElement("div");
 	page.className = "tabs-page";
@@ -212,15 +236,18 @@ export function buildTabsPage(
 
 		if (state.inputMode === "visual") {
 			holeInputRef = buildHoleInput(inputPanel, state.keyPosition, (note) => {
-				state.notes.push(note);
+				state.phrases[activePhraseIdx].notes.push(note);
 				renderGrid();
 			});
 		} else {
 			textInputRef = buildTextInput(inputPanel, state.keyPosition, (notes) => {
-				state.notes = notes;
+				state.phrases[activePhraseIdx].notes = notes;
 				renderGrid();
 			});
-			textInputRef.setValue(state.notes, state.keyPosition);
+			textInputRef.setValue(
+				state.phrases[activePhraseIdx].notes,
+				state.keyPosition,
+			);
 		}
 	}
 
@@ -230,16 +257,18 @@ export function buildTabsPage(
 		}
 		gridRef = buildTabGrid(
 			gridContainer,
-			state.notes,
+			state.phrases,
 			state.keyPosition,
 			(updated) => {
-				state.notes = updated;
+				state.phrases = updated;
+				if (activePhraseIdx >= state.phrases.length) {
+					activePhraseIdx = state.phrases.length - 1;
+				}
 			},
-			(index) => {
-				holeInputRef?.setHoles(
-					[...state.notes[index].holes],
-					state.notes[index].octave,
-				);
+			(phraseIdx, noteIdx) => {
+				activePhraseIdx = phraseIdx;
+				const note = state.phrases[phraseIdx].notes[noteIdx];
+				holeInputRef?.setHoles([...note.holes], note.octave);
 			},
 		);
 	}

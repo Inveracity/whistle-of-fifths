@@ -1,6 +1,6 @@
 const NS = "http://www.w3.org/2000/svg";
 
-import type { TabNote } from "./fingerings";
+import type { Phrase, TabNote } from "./fingerings";
 import { resolveFingering, resolveNote } from "./fingerings";
 
 export interface TabGridController {
@@ -9,18 +9,23 @@ export interface TabGridController {
 
 export function buildTabGrid(
 	container: HTMLElement,
-	notes: TabNote[],
+	phrases: Phrase[],
 	keyPosition: number,
-	onNotesChange: (notes: TabNote[]) => void,
-	onSelect: (index: number) => void,
+	onPhrasesChange: (phrases: Phrase[]) => void,
+	onSelect: (phraseIdx: number, noteIdx: number) => void,
 ): TabGridController {
 	let currentKeyPosition = keyPosition;
+	const currentPhrases: Phrase[] = phrases.map((p) => ({
+		...p,
+		notes: [...p.notes],
+	}));
 
 	const grid = document.createElement("div");
 	grid.className = "tab-grid";
 	container.appendChild(grid);
 
-	let dragSrcIndex = -1;
+	let dragSrcPhraseIdx = -1;
+	let dragSrcNoteIdx = -1;
 
 	function buildMiniWhistle(holes: boolean[]): SVGSVGElement {
 		const svg = document.createElementNS(NS, "svg");
@@ -52,11 +57,20 @@ export function buildTabGrid(
 		return svg;
 	}
 
-	function buildCell(note: TabNote, index: number): HTMLElement {
+	function deepCopyPhrases(): Phrase[] {
+		return currentPhrases.map((p) => ({ ...p, notes: [...p.notes] }));
+	}
+
+	function buildCell(
+		phraseIdx: number,
+		note: TabNote,
+		noteIdx: number,
+	): HTMLElement {
 		const cell = document.createElement("div");
 		cell.className = "tab-cell";
 		cell.draggable = true;
-		cell.dataset.index = String(index);
+		cell.dataset.phraseIdx = String(phraseIdx);
+		cell.dataset.noteIdx = String(noteIdx);
 
 		const entry = resolveFingering(note.holes, note.octave);
 		if (!entry) cell.classList.add("tab-cell--invalid");
@@ -81,18 +95,18 @@ export function buildTabGrid(
 		const deleteBtn = document.createElement("button");
 		deleteBtn.type = "button";
 		deleteBtn.className = "tab-cell-delete";
-		deleteBtn.setAttribute("aria-label", `Delete note ${index + 1}`);
+		deleteBtn.setAttribute("aria-label", `Delete note ${noteIdx + 1}`);
 		deleteBtn.textContent = "×";
 		deleteBtn.addEventListener("click", (e) => {
 			e.stopPropagation();
-			notes.splice(index, 1);
-			onNotesChange([...notes]);
+			currentPhrases[phraseIdx].notes.splice(noteIdx, 1);
+			onPhrasesChange(deepCopyPhrases());
 			render();
 		});
 		cell.appendChild(deleteBtn);
 
 		cell.addEventListener("click", () => {
-			onSelect(index);
+			onSelect(phraseIdx, noteIdx);
 			for (const c of grid.querySelectorAll(".tab-cell--selected")) {
 				c.classList.remove("tab-cell--selected");
 			}
@@ -100,11 +114,12 @@ export function buildTabGrid(
 		});
 
 		cell.addEventListener("dragstart", (e) => {
-			dragSrcIndex = index;
+			dragSrcPhraseIdx = phraseIdx;
+			dragSrcNoteIdx = noteIdx;
 			cell.classList.add("tab-cell--dragging");
 			if (e.dataTransfer) {
 				e.dataTransfer.effectAllowed = "move";
-				e.dataTransfer.setData("text/plain", String(index));
+				e.dataTransfer.setData("text/plain", `${phraseIdx}:${noteIdx}`);
 			}
 		});
 
@@ -118,7 +133,9 @@ export function buildTabGrid(
 		cell.addEventListener("dragover", (e) => {
 			e.preventDefault();
 			if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-			if (dragSrcIndex !== index) cell.classList.add("tab-cell--drag-over");
+			if (dragSrcPhraseIdx === phraseIdx && dragSrcNoteIdx !== noteIdx) {
+				cell.classList.add("tab-cell--drag-over");
+			}
 		});
 
 		cell.addEventListener("dragleave", () => {
@@ -128,49 +145,152 @@ export function buildTabGrid(
 		cell.addEventListener("drop", (e) => {
 			e.preventDefault();
 			cell.classList.remove("tab-cell--drag-over");
-			if (dragSrcIndex === -1 || dragSrcIndex === index) return;
-			const moved = notes.splice(dragSrcIndex, 1)[0];
-			notes.splice(index, 0, moved);
-			dragSrcIndex = -1;
-			onNotesChange([...notes]);
+			if (
+				dragSrcPhraseIdx === -1 ||
+				dragSrcPhraseIdx !== phraseIdx ||
+				dragSrcNoteIdx === noteIdx
+			)
+				return;
+			const notes = currentPhrases[phraseIdx].notes;
+			const moved = notes.splice(dragSrcNoteIdx, 1)[0];
+			notes.splice(noteIdx, 0, moved);
+			dragSrcPhraseIdx = -1;
+			dragSrcNoteIdx = -1;
+			onPhrasesChange(deepCopyPhrases());
 			render();
 		});
 
 		return cell;
 	}
 
-	function buildInsertMarker(index: number): HTMLElement {
+	function buildInsertMarker(
+		phraseIdx: number,
+		insertIdx: number,
+	): HTMLElement {
 		const marker = document.createElement("button");
 		marker.type = "button";
 		marker.className = "tab-insert-marker";
-		marker.setAttribute("aria-label", `Insert note at position ${index + 1}`);
+		marker.setAttribute(
+			"aria-label",
+			`Insert note at position ${insertIdx + 1}`,
+		);
 		marker.textContent = "+";
 		marker.addEventListener("click", () => {
-			notes.splice(index, 0, {
+			currentPhrases[phraseIdx].notes.splice(insertIdx, 0, {
 				holes: [true, true, true, true, true, true],
 				octave: 0,
 			});
-			onNotesChange([...notes]);
+			onPhrasesChange(deepCopyPhrases());
 			render();
 		});
 		return marker;
+	}
+
+	function renderPhraseNotes(
+		phraseIdx: number,
+		notesContainer: HTMLElement,
+	): void {
+		while (notesContainer.firstChild) {
+			notesContainer.removeChild(notesContainer.firstChild);
+		}
+		const phrase = currentPhrases[phraseIdx];
+		const notes = phrase.notes;
+		const cols = phrase.columns;
+
+		if (notes.length === 0) {
+			const row = document.createElement("div");
+			row.className = "tab-row";
+			row.appendChild(buildInsertMarker(phraseIdx, 0));
+			notesContainer.appendChild(row);
+			return;
+		}
+
+		for (let rowStart = 0; rowStart < notes.length; rowStart += cols) {
+			const row = document.createElement("div");
+			row.className = "tab-row";
+			const rowEnd = Math.min(rowStart + cols, notes.length);
+			row.appendChild(buildInsertMarker(phraseIdx, rowStart));
+			for (let ni = rowStart; ni < rowEnd; ni++) {
+				row.appendChild(buildCell(phraseIdx, notes[ni], ni));
+				row.appendChild(buildInsertMarker(phraseIdx, ni + 1));
+			}
+			notesContainer.appendChild(row);
+		}
+	}
+
+	function buildPhraseRow(phraseIdx: number): HTMLElement {
+		const phrase = currentPhrases[phraseIdx];
+		const phraseEl = document.createElement("div");
+		phraseEl.className = "tab-phrase";
+
+		const header = document.createElement("div");
+		header.className = "tab-phrase-header";
+
+		const label = document.createElement("label");
+		label.className = "tab-phrase-columns-label";
+		label.textContent = "Columns";
+
+		const columnsInput = document.createElement("input");
+		columnsInput.type = "number";
+		columnsInput.className = "tab-phrase-columns-input";
+		columnsInput.min = "1";
+		columnsInput.max = "32";
+		columnsInput.value = String(phrase.columns);
+		columnsInput.setAttribute("aria-label", "Columns per row");
+
+		const notesContainer = document.createElement("div");
+		notesContainer.className = "tab-phrase-notes";
+
+		columnsInput.addEventListener("input", () => {
+			const val = Number.parseInt(columnsInput.value, 10);
+			if (Number.isNaN(val) || val < 1) return;
+			currentPhrases[phraseIdx].columns = val;
+			onPhrasesChange(deepCopyPhrases());
+			renderPhraseNotes(phraseIdx, notesContainer);
+		});
+
+		header.appendChild(label);
+		header.appendChild(columnsInput);
+
+		if (currentPhrases.length > 1) {
+			const deleteBtn = document.createElement("button");
+			deleteBtn.type = "button";
+			deleteBtn.className = "tab-phrase-delete";
+			deleteBtn.setAttribute("aria-label", `Delete phrase ${phraseIdx + 1}`);
+			deleteBtn.textContent = "×";
+			deleteBtn.addEventListener("click", () => {
+				currentPhrases.splice(phraseIdx, 1);
+				onPhrasesChange(deepCopyPhrases());
+				render();
+			});
+			header.appendChild(deleteBtn);
+		}
+
+		phraseEl.appendChild(header);
+
+		renderPhraseNotes(phraseIdx, notesContainer);
+		phraseEl.appendChild(notesContainer);
+
+		return phraseEl;
 	}
 
 	function render(): void {
 		while (grid.firstChild) {
 			grid.removeChild(grid.firstChild);
 		}
-
-		if (notes.length === 0) {
-			return;
+		for (let pi = 0; pi < currentPhrases.length; pi++) {
+			grid.appendChild(buildPhraseRow(pi));
 		}
-
-		grid.appendChild(buildInsertMarker(0));
-
-		for (let i = 0; i < notes.length; i++) {
-			grid.appendChild(buildCell(notes[i], i));
-			grid.appendChild(buildInsertMarker(i + 1));
-		}
+		const addPhraseBtn = document.createElement("button");
+		addPhraseBtn.type = "button";
+		addPhraseBtn.className = "tab-add-phrase";
+		addPhraseBtn.textContent = "+ Add phrase";
+		addPhraseBtn.addEventListener("click", () => {
+			currentPhrases.push({ columns: 8, notes: [] });
+			onPhrasesChange(deepCopyPhrases());
+			render();
+		});
+		grid.appendChild(addPhraseBtn);
 	}
 
 	render();
