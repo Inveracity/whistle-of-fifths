@@ -863,3 +863,60 @@ body {
 	color: var(--error);
 	background: color-mix(in srgb, var(--error) 10%, var(--surface));
 }
+
+@media (min-width: 900px) {
+	.layout {
+		max-width: none;
+	}
+
+	.tabs-page {
+		display: grid;
+		grid-template-columns: 280px 1fr;
+		column-gap: 2rem;
+		align-items: start;
+	}
+
+	.tabs-title-input {
+		grid-column: 2;
+		grid-row: 1;
+		max-width: none;
+	}
+
+	.tabs-grid-container {
+		grid-column: 2;
+		grid-row: 2;
+		max-width: none;
+	}
+
+	.tabs-actions {
+		grid-column: 2;
+		grid-row: 3;
+		max-width: none;
+	}
+
+	.tabs-input-bar {
+		grid-column: 1;
+		grid-row: 1 / span 3;
+		position: static;
+		border-top: none;
+		padding: 0;
+		background: transparent;
+		width: auto;
+	}
+
+	.tabs-input-bar-handle {
+		display: none;
+	}
+
+	.tabs-input-bar .tabs-input-content,
+	.tabs-input-bar--collapsed .tabs-input-content {
+		max-height: none;
+		opacity: 1;
+		transition: none;
+		align-items: stretch;
+	}
+
+	.tabs-input-panel {
+		max-width: none;
+	}
+}
