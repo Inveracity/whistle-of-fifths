@@ -13,6 +13,9 @@
 - `bun run dev` — start dev server at http://localhost:3000 (serves `dist/`)
 - `bun run build` — bundle `src/main.ts` to `dist/`, copy `index.html` and `style.css`
 - `bun run biome check` — run Biome linter
+- `bun run biome fix` — run Biome fixer (auto-fix lint errors)
+- `bun run biome format` — run Biome formatter
+
 
 ## Project Rules
 

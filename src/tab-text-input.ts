@@ -1,4 +1,4 @@
-import type { TabNote } from "./fingerings";
+import type { Phrase, TabNote } from "./fingerings";
 import {
 	noteTextToFingering,
 	resolveFingering,
@@ -6,7 +6,7 @@ import {
 } from "./fingerings";
 
 export interface TextInputController {
-	setValue(notes: TabNote[], keyPosition: number): void;
+	setValue(phrases: Phrase[], keyPosition: number): void;
 	setKeyPosition(pos: number): void;
 }
 
@@ -22,51 +22,73 @@ function noteToToken(note: TabNote, keyPosition: number): string {
 export function buildTextInput(
 	container: HTMLElement,
 	keyPosition: number,
-	onChange: (notes: TabNote[]) => void,
+	onChange: (phrases: Phrase[]) => void,
 ): TextInputController {
 	let currentKeyPosition = keyPosition;
+	let currentPhrases: Phrase[] = [{ columns: 8, notes: [] }];
 
 	const wrapper = document.createElement("div");
 	wrapper.className = "text-input-wrapper";
 
 	const textarea = document.createElement("textarea");
 	textarea.className = "tab-textarea";
-	textarea.rows = 3;
-	textarea.placeholder = `Type note names, e.g: d e f# g a b c#\nUse + for high octave: d+`;
+	textarea.rows = 4;
+	textarea.placeholder =
+		"Type note names, e.g: d e f# g a b c#\nUse + for high octave: d+\nSeparate phrases with a new line";
 	textarea.spellcheck = false;
 	textarea.setAttribute("autocorrect", "off");
 	textarea.setAttribute("autocapitalize", "none");
 
-	const tokenRow = document.createElement("div");
-	tokenRow.className = "token-row";
+	const tokenContainer = document.createElement("div");
+	tokenContainer.className = "token-container";
 
 	wrapper.appendChild(textarea);
-	wrapper.appendChild(tokenRow);
+	wrapper.appendChild(tokenContainer);
 	container.appendChild(wrapper);
 
 	function parse(): void {
-		const raw = textarea.value;
-		const tokens = raw.trim() === "" ? [] : raw.trim().split(/\s+/);
+		const lines = textarea.value.split("\n");
 
-		while (tokenRow.firstChild) {
-			tokenRow.removeChild(tokenRow.firstChild);
+		while (tokenContainer.firstChild) {
+			tokenContainer.removeChild(tokenContainer.firstChild);
 		}
 
-		const validNotes: TabNote[] = [];
+		const newPhrases: Phrase[] = [];
 
-		for (const token of tokens) {
-			const result = noteTextToFingering(token, currentKeyPosition);
-			const span = document.createElement("span");
-			span.className = result ? "token" : "token token--invalid";
-			span.textContent = token;
-			tokenRow.appendChild(span);
+		for (let li = 0; li < lines.length; li++) {
+			const line = lines[li];
+			const columns = currentPhrases[li]?.columns ?? 8;
+			const tokens = line.trim() === "" ? [] : line.trim().split(/\s+/);
 
-			if (result) {
-				validNotes.push({ holes: result.holes, octave: result.octave });
+			const tokenRow = document.createElement("div");
+			tokenRow.className = "token-row";
+
+			const validNotes: TabNote[] = [];
+
+			for (const token of tokens) {
+				const result = noteTextToFingering(token, currentKeyPosition);
+				const span = document.createElement("span");
+				span.className = result ? "token" : "token token--invalid";
+				span.textContent = token;
+				tokenRow.appendChild(span);
+				if (result) {
+					validNotes.push({ holes: result.holes, octave: result.octave });
+				}
 			}
+
+			tokenContainer.appendChild(tokenRow);
+
+			if (li < lines.length - 1) {
+				const sep = document.createElement("div");
+				sep.className = "token-phrase-sep";
+				tokenContainer.appendChild(sep);
+			}
+
+			newPhrases.push({ columns, notes: validNotes });
 		}
 
-		onChange(validNotes);
+		currentPhrases = newPhrases;
+		onChange(newPhrases);
 	}
 
 	textarea.addEventListener("input", () => {
@@ -74,9 +96,12 @@ export function buildTextInput(
 	});
 
 	return {
-		setValue(notes: TabNote[], kp: number): void {
+		setValue(phrases: Phrase[], kp: number): void {
 			currentKeyPosition = kp;
-			textarea.value = notes.map((n) => noteToToken(n, kp)).join(" ");
+			currentPhrases = phrases.map((p) => ({ ...p, notes: [...p.notes] }));
+			textarea.value = phrases
+				.map((p) => p.notes.map((n) => noteToToken(n, kp)).join(" "))
+				.join("\n");
 			parse();
 		},
 		setKeyPosition(pos: number): void {

@@ -206,9 +206,10 @@ export function buildTabsPage(
 
 	const inputContent = document.createElement("div");
 	inputContent.className = "tabs-input-content";
-	inputContent.appendChild(keyRow);
+
 	inputContent.appendChild(modeToggle);
 	inputContent.appendChild(inputPanel);
+	inputContent.appendChild(keyRow);
 
 	let collapsed = false;
 	chevronBtn.addEventListener("click", () => {
@@ -240,14 +241,15 @@ export function buildTabsPage(
 				renderGrid();
 			});
 		} else {
-			textInputRef = buildTextInput(inputPanel, state.keyPosition, (notes) => {
-				state.phrases[activePhraseIdx].notes = notes;
-				renderGrid();
-			});
-			textInputRef.setValue(
-				state.phrases[activePhraseIdx].notes,
+			textInputRef = buildTextInput(
+				inputPanel,
 				state.keyPosition,
+				(phrases) => {
+					state.phrases = phrases;
+					renderGrid();
+				},
 			);
+			textInputRef.setValue(state.phrases, state.keyPosition);
 		}
 	}
 
