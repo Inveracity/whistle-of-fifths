@@ -203,7 +203,7 @@ export function buildTabsPage(
 		const url = `${window.location.origin}${window.location.pathname}#tabs?data=${encoded}`;
 		window.location.hash = `tabs?data=${encoded}`;
 		navigator.clipboard
-			.writeText(url)
+			?.writeText(url)
 			.then(() => {
 				const original = shareBtn.textContent;
 				shareBtn.textContent = "Copied!";
