@@ -4,7 +4,7 @@
 	"scripts": {
 		"dev": "bun run server.ts",
 		"build": "bun build src/main.ts --outdir dist --minify && cp src/index.html dist/index.html && cp src/style.css dist/style.css",
-		"lint": "biome check src/**/*.ts",
+		"lint": "biome check",
 		"test": "vitest run",
 		"test:watch": "vitest"
 	},
